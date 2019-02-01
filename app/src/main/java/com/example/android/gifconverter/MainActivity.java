@@ -1,6 +1,8 @@
 package com.example.android.gifconverter;
 
+import android.app.Activity;
 import android.app.DownloadManager;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
@@ -43,6 +45,19 @@ public class MainActivity extends AppCompatActivity {
         downloadBtn = findViewById(R.id.download_btn);
         downloadBtn.setVisibility(View.INVISIBLE);
 
+        downloadBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                downloadManager = (DownloadManager)getSystemService(Context.DOWNLOAD_SERVICE);
+                Uri uri = Uri.parse(gifUrl);
+                DownloadManager.Request request = new DownloadManager.Request(uri);
+                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                Long reference = downloadManager.enqueue(request);
+
+            }
+        });
+
         uploadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -53,11 +68,13 @@ public class MainActivity extends AppCompatActivity {
                 Intent GalleryIntent = new Intent();
                 GalleryIntent.setType("video/*");
                 GalleryIntent.setAction(Intent.ACTION_GET_CONTENT);
-                startActivityForResult(Intent.createChooser(GalleryIntent, "select video"), SELECT_VIDEO);
+                startActivityForResult(Intent.createChooser(GalleryIntent, "Select video"), SELECT_VIDEO);
             }
 
 
         });
+
+
 
     }
 
@@ -65,17 +82,17 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, final Intent data){
 
         if (requestCode == SELECT_VIDEO && resultCode == RESULT_OK){
-            Uri selectedVideo = data.getData();
+            final Uri selectedVideo = data.getData();
             MediaManager.get()
                     .upload(selectedVideo)
-                    .unsigned("preset_name")
+                    .unsigned("jtyuobx8")
                     .option("resource_type", "video")
                     .callback(new UploadCallback() {
                         @Override
                         public void onStart(String requestId) {
 
                             progressBar.setVisibility(View.VISIBLE);
-                            Toast.makeText(MainActivity.this, "Upload has started...", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MainActivity.this, "Upload started...", Toast.LENGTH_SHORT).show();
 
                         }
 
@@ -95,8 +112,8 @@ public class MainActivity extends AppCompatActivity {
 
                             gifUrl = MediaManager.get().url().resourceType("video")
                                     .transformation(new Transformation().videoSampling("25")
-                                    .delay("200").height("200").effect("loop:10").crop("scale"))
-                                    .format("gif").generate(publicId);
+                                    .delay("200").height(200).effect("loop:10").crop("scale"))
+                                    .resourceType("video").generate(publicId + ".gif");
 
                             Glide.with(getApplicationContext()).asGif().load(gifUrl).into(image1);
                             downloadBtn.setVisibility(View.VISIBLE);
@@ -117,7 +134,10 @@ public class MainActivity extends AppCompatActivity {
                         public void onReschedule(String requestId, ErrorInfo error) {
 
                         }
-                    });
+                    }).dispatch();
+        } else {
+
+            Toast.makeText(MainActivity.this, "Can't upload", Toast.LENGTH_SHORT).show();
         }
 
     }
